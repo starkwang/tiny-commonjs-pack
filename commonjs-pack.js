@@ -4,7 +4,7 @@ var fs = Promise.promisifyAll(fs_origin);
 
 bundle("index.js");
 
-default export function bundle(fileName) {
+export default function bundle(fileName) {
     var str = "\"{{moduleName}}\":function(module, exports, require, global){\n{{codeContent}}\n},\n";
 
     var modulesStr = "{\n";
@@ -26,7 +26,17 @@ default export function bundle(fileName) {
         .then(modulesStr => {
             return fs.readFileAsync("packSource.js", "utf-8").then(contents => contents + "(" + modulesStr + ")")
         })
-        .then(code => fs.writeFileAsync("bundle.js", code))
+        .then(code => {
+            return fs.existsAsync("./build").then(exists => {
+                if(exists){
+                    return fs.writeFileAsync("./build/bundle.js", code)
+                }else{
+                    return fs.mkdirAsync("build").then(()=>{
+                        return fs.writeFileAsync("./build/bundle.js", code)
+                    })
+                }
+            })   
+        })
         .then(result => log(result))
 }
 
