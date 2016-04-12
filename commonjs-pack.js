@@ -1,15 +1,25 @@
 import Promise from "bluebird";
 import fs_origin from "fs";
+import * as js_beautify from "js-beautify";
+
+var beautify = js_beautify.js_beautify;
 var fs = Promise.promisifyAll(fs_origin);
 
-bundle("index.js");
+if(process.argv[2]){
+    console.log("starting bundle " + process.argv[2]);
+    bundle(process.argv[2]);
+}else{
+    console.log("No File Input");
+}
+
+
 
 export default function bundle(fileName) {
     var str = "\"{{moduleName}}\":function(module, exports, require, global){\n{{codeContent}}\n},\n";
 
     var modulesStr = "{\n";
 
-    fs.readFileAsync("index.js", "utf-8")
+    fs.readFileAsync(fileName, "utf-8")
         .then(contents => {
             var code = str.replace(/{{moduleName}}/, "entry").replace(/{{codeContent}}/, contents);
             modulesStr += code;
@@ -23,21 +33,10 @@ export default function bundle(fileName) {
             });
             return modulesStr += "}";
         })
-        .then(modulesStr => {
-            return fs.readFileAsync("packSource.js", "utf-8").then(contents => contents + "(" + modulesStr + ")")
-        })
-        .then(code => {
-            return fs.existsAsync("./build").then(exists => {
-                if(exists){
-                    return fs.writeFileAsync("./build/bundle.js", code)
-                }else{
-                    return fs.mkdirAsync("build").then(()=>{
-                        return fs.writeFileAsync("./build/bundle.js", code)
-                    })
-                }
-            })   
-        })
-        .then(result => log(result))
+        .then(modulesStr => fs.readFileAsync("packSource.js", "utf-8").then(contents => contents + "(" + modulesStr + ")"))
+        .then(code => fs.writeFileAsync("./bundle.js", beautify(code)))
+        .then(() => console.log("bundle success"))
+        .catch(err => console.log("bundle Error!\n", err))
 }
 
 function log(a) {

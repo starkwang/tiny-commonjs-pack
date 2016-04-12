@@ -23,38 +23,28 @@
     }
     return require("entry");
 })({
-"entry":function(module, exports, require, global){
-var module1 = require("./module1");
-var module2 = require("./module2");
-module1.foo();
-module2.foo();
-function hello(){
-    console.log("Hello!");
-}
-module.exports = hello;
-},
-"./module1":function(module, exports, require, global){
-var module2 = require("./module2");
-console.log("initialize module1");
+    "entry": function(module, exports, require, global) {
+        var module2 = require("./module2");
+        console.log("initialize module1");
 
-console.log("this is module2.foo() in module1:");
-module2.foo();
-console.log("\n")
+        console.log("this is module2.foo() in module1:");
+        module2.foo();
+        console.log("\n")
 
-module.exports = {
-    foo: function() {
-        console.log("module1 foo !!!");
-    }
-};
+        module.exports = {
+            foo: function() {
+                console.log("module1 foo !!!");
+            }
+        };
 
-},
-"./module2":function(module, exports, require, global){
-console.log("initialize module2");
-module.exports = {
-    foo: function() {
-        console.log("module2 foo !!!");
-    }
-};
+    },
+    "./module2": function(module, exports, require, global) {
+        console.log("initialize module2");
+        module.exports = {
+            foo: function() {
+                console.log("module2 foo !!!");
+            }
+        };
 
-},
+    },
 })
