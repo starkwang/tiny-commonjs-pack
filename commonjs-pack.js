@@ -11,16 +11,17 @@ var __MODULES = [
     // 2: 'test/module2'
 ];
 
-if(process.argv[2]){
+
+if (process.argv[2]) {
     console.log("starting bundle " + process.argv[2]);
     pack(process.argv[2]);
-}else{
+} else {
     console.log("No File Input");
 }
 
 
 function pack(fileName) {
-    var name = fileName.replace(/\.js/,"");
+    var name = fileName.replace(/\.js/, "");
     var str = "function(module, exports, require, global){\n{{moduleContent}}\n},\n";
     bundleModule(name, './')
         .then(() => {
@@ -37,7 +38,7 @@ function pack(fileName) {
         .then(modules => fs.readFileAsync("packSource.js", "utf-8").then(content => content + "(" + modules + ")"))
         .then(result => js_beautify(result))
         .then(x => log(x))
-        .then(result => fs.writeFileAsync("bundle.js",result))
+        .then(result => fs.writeFileAsync("bundle.js", result))
         .then(() => console.log("bundle success!"));
 }
 
@@ -51,9 +52,10 @@ function bundleModule(moduleName, nowPath) {
         })
         .then(contents => matchRequire(contents))
         .then(requires => {
+
             if (requires.length > 0) {
                 return Promise.map(requires, (requireName => {
-                    return bundleModule(requireName, path.dirname(moduleName) + "/")
+                    return bundleModule(requireName, path.dirname(nowPath + moduleName) + "/")
                 }))
             } else {
                 return Promise.resolve();

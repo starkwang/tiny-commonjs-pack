@@ -47,10 +47,20 @@
 
     },
     function(module, exports, require, global) {
+        var module3 = require(3);
         console.log("initialize module2");
         module.exports = {
             foo: function() {
                 console.log("module2 foo !!!");
+            }
+        };
+
+    },
+    function(module, exports, require, global) {
+        console.log("initialize module3");
+        module.exports = {
+            foo: function() {
+                console.log("module3 foo !!!");
             }
         };
 

@@ -1,4 +1,4 @@
-var module2 = require("../module2");
+var module2 = require("./module2/module2");
 console.log("initialize module1");
 
 console.log("this is module2.foo() in module1:");
