@@ -1,66 +1,95 @@
 import Promise from "bluebird";
 import fs_origin from "fs";
-import * as js_beautify from "js-beautify";
+import { js_beautify } from "js-beautify";
+import path from "path";
 
-var beautify = js_beautify.js_beautify;
 var fs = Promise.promisifyAll(fs_origin);
+
+var __MODULES = [
+    // 0: 'index',
+    // 1: 'module1'
+    // 2: 'test/module2'
+];
 
 if(process.argv[2]){
     console.log("starting bundle " + process.argv[2]);
-    bundle(process.argv[2]);
+    pack(process.argv[2]);
 }else{
     console.log("No File Input");
 }
 
 
+function pack(fileName) {
+    var name = fileName.replace(/\.js/,"");
+    var str = "function(module, exports, require, global){\n{{moduleContent}}\n},\n";
+    bundleModule(name, './')
+        .then(() => {
+            console.log(__MODULES);
+            return Promise.map(__MODULES, (moduleName => parseRequire(moduleName)))
+        })
+        .then(moduleContents => {
+            var modules = "[";
+            moduleContents.forEach(content => {
+                modules += str.replace(/{{moduleContent}}/, content);
+            })
+            return modules += "]"
+        })
+        .then(modules => fs.readFileAsync("packSource.js", "utf-8").then(content => content + "(" + modules + ")"))
+        .then(result => js_beautify(result))
+        .then(x => log(x))
+        .then(result => fs.writeFileAsync("bundle.js",result))
+        .then(() => console.log("bundle success!"));
+}
 
-export default function bundle(fileName) {
-    var str = "\"{{moduleName}}\":function(module, exports, require, global){\n{{codeContent}}\n},\n";
 
-    var modulesStr = "{\n";
-
-    fs.readFileAsync(fileName, "utf-8")
+function bundleModule(moduleName, nowPath) {
+    console.log("reading :", path.normalize(nowPath + moduleName + '.js'));
+    return fs.readFileAsync(path.normalize(nowPath + moduleName + '.js'), 'utf-8')
         .then(contents => {
-            var code = str.replace(/{{moduleName}}/, "entry").replace(/{{codeContent}}/, contents);
-            modulesStr += code;
-            return contents
+            __MODULES.push(path.normalize(nowPath + moduleName))
+            return contents;
         })
         .then(contents => matchRequire(contents))
-        .then(requires => Promise.map(requires, (moduleName => readModule(moduleName))))
-        .then(files => {
-            files.forEach(file => {
-                modulesStr += str.replace(/{{moduleName}}/, file.moduleName).replace(/{{codeContent}}/, file.data);
-            });
-            return modulesStr += "}";
+        .then(requires => {
+            if (requires.length > 0) {
+                return Promise.map(requires, (requireName => {
+                    return bundleModule(requireName, path.dirname(moduleName) + "/")
+                }))
+            } else {
+                return Promise.resolve();
+            }
         })
-        .then(modulesStr => fs.readFileAsync("packSource.js", "utf-8").then(contents => contents + "(" + modulesStr + ")"))
-        .then(code => fs.writeFileAsync("./bundle.js", beautify(code)))
-        .then(() => console.log("bundle success"))
-        .catch(err => console.log("bundle Error!\n", err))
 }
+
+
+function parseRequire(moduleName) {
+    var dirPath = path.dirname(moduleName) + '/';
+    return fs.readFileAsync(moduleName + '.js', 'utf-8')
+        .then(code => {
+            var requires = matchRequire(code);
+            requires.forEach(item => {
+                var reg = new RegExp("require\\(\"" + item + "\"\\)");
+                var modulePath = path.normalize(dirPath + item);
+                var moduleID = __MODULES.indexOf(modulePath);
+                code = code.replace(reg, "require(" + moduleID + ")");
+            })
+            return code;
+        })
+}
+
+
+function matchRequire(code) {
+    var requires = code.match(/require\("\S*"\)/g);
+    if (requires) {
+        return requires.map(item => item.match(/"\S*"/)[0]).map(item => item.substring(1, item.length - 1));
+    } else {
+        return [];
+    }
+
+}
+
 
 function log(a) {
     console.log(a);
     return a;
-}
-
-function readModule(moduleName) {
-    return new Promise((resolve, reject) => {
-        fs.readFile(moduleName + ".js", "utf-8", (err, data) => {
-            if (err) {
-                reject(err);
-            } else {
-                resolve({
-                    moduleName: moduleName,
-                    data: data
-                });
-            }
-        })
-    })
-}
-
-function matchRequire(code) {
-    return code.match(/require\("\S*"\)/g)
-        .map(item => item.match(/"\S*"/)[0])
-        .map(item => item.substring(1, item.length - 1));
 }

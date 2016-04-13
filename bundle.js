@@ -21,10 +21,18 @@
         //将模块的exports返回
         return module.exports;
     }
-    return require("entry");
-})({
-    "entry": function(module, exports, require, global) {
-        var module2 = require("./module2");
+    return require(0);
+})([function(module, exports, require, global) {
+        var module1 = require(1);
+        module1.foo();
+
+        function hello() {
+            console.log("Hello!");
+        }
+        module.exports = hello;
+    },
+    function(module, exports, require, global) {
+        var module2 = require(2);
         console.log("initialize module1");
 
         console.log("this is module2.foo() in module1:");
@@ -38,7 +46,7 @@
         };
 
     },
-    "./module2": function(module, exports, require, global) {
+    function(module, exports, require, global) {
         console.log("initialize module2");
         module.exports = {
             foo: function() {
@@ -47,4 +55,4 @@
         };
 
     },
-})
+])

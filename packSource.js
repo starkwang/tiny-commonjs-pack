@@ -21,5 +21,5 @@
         //将模块的exports返回
         return module.exports;
     }
-    return require("entry");
+    return require(0);
 })
