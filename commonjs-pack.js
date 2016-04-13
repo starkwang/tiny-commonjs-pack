@@ -70,10 +70,11 @@ function parseRequire(moduleName) {
         .then(code => {
             var requires = matchRequire(code);
             requires.forEach(item => {
-                var reg = new RegExp("require\\(\"" + item + "\"\\)");
+                var reg1 = new RegExp("require\\(\"" + item + "\"\\)");
+                var reg2 = new RegExp("require\\(\'" + item + "\'\\)");
                 var modulePath = path.normalize(dirPath + item);
                 var moduleID = __MODULES.indexOf(modulePath);
-                code = code.replace(reg, "require(" + moduleID + ")");
+                code = code.replace(reg1, "require(" + moduleID + ")").replace(reg2, "require(" + moduleID + ")");
             })
             return code;
         })
@@ -81,13 +82,10 @@ function parseRequire(moduleName) {
 
 
 function matchRequire(code) {
-    var requires = code.match(/require\("\S*"\)/g);
-    if (requires) {
-        return requires.map(item => item.match(/"\S*"/)[0]).map(item => item.substring(1, item.length - 1));
-    } else {
-        return [];
-    }
-
+    var requires1 = code.match(/require\("\S*"\)/g) || [];
+    var requires2 = code.match(/require\('\S*'\)/g) || [];
+    return requires1.map(item => item.match(/"\S*"/)[0]).map(item => item.substring(1, item.length - 1))
+        .concat(requires2.map(item => item.match(/'\S*'/)[0]).map(item => item.substring(1, item.length - 1)));
 }
 
 
