@@ -20,12 +20,13 @@ if (process.argv[2]) {
     console.log("No File Input");
 }
 
+var outputFile = process.argv[3] || "bundle.js"
 
 function pack(fileName) {
     var name = fileName.replace(/\.js/, "");
 
     //基本的module模板
-    var str = "function(module, exports, require, global){\n{{moduleContent}}\n},\n";
+    var str = "function(module, exports, require, global){\n{{moduleContent}}\n}";
 
     //递归打包
     bundleModule(name, './')
@@ -37,17 +38,18 @@ function pack(fileName) {
         })
         .then(moduleContents => {
             //合并模块
-            var modules = "[";
+            var modules = [];
             moduleContents.forEach(content => {
-                modules += str.replace(/{{moduleContent}}/, content);
+                modules.push(str.replace(/{{moduleContent}}/, content));
             })
-            return modules += "]"
+            return '[\n' + modules.join(',\n') + '\n]'
         })
         //输出
-        .then(modules => fs.readFileAsync("packSource.js", "utf-8").then(content => content + "(" + modules + ")"))
+        .then(modules => fs.readFileAsync("packSource.js", "utf-8")
+        .then(content => content + "(" + modules + ")"))
         .then(result => js_beautify(result))
         .then(x => log(x))
-        .then(result => fs.writeFileAsync("bundle.js", result))
+        .then(result => fs.writeFileAsync(outputFile, result))
         .then(() => console.log("bundle success!"));
 }
 
@@ -82,11 +84,13 @@ function replaceRequireWithID(moduleName) {
     return fs.readFileAsync(moduleName + '.js', 'utf-8')
         .then(code => {
             matchRequire(code).forEach(item => {
-                var reg1 = new RegExp("require\\(\"" + item + "\"\\)");
-                var reg2 = new RegExp("require\\(\'" + item + "\'\\)");
+                var regRequire = new RegExp(
+                	"require\\(\"" + item + "\"\\)|" +
+                	"require\\(\'" + item + "\'\\)"
+                );
                 var modulePath = path.normalize(dirPath + item);
                 var moduleID = __MODULES.indexOf(modulePath);
-                code = code.replace(reg1, "require(" + moduleID + ")").replace(reg2, "require(" + moduleID + ")");
+                code = code.replace(regRequire, "require(" + moduleID + ")");
             })
             return code;
         })
@@ -95,10 +99,10 @@ function replaceRequireWithID(moduleName) {
 
 //解析依赖的模块名
 function matchRequire(code) {
-    var requires1 = code.match(/require\("\S*"\)/g) || [];
-    var requires2 = code.match(/require\('\S*'\)/g) || [];
-    return requires1.map(item => item.match(/"\S*"/)[0]).map(item => item.substring(1, item.length - 1))
-        .concat(requires2.map(item => item.match(/'\S*'/)[0]).map(item => item.substring(1, item.length - 1)));
+    var requires = code.match(/require\("\S*"\)|require\('\S*'\)/g) || [];
+    return requires
+    	.map(item => item.match(/"\S*"|'\S*'/)[0])
+    	.map(item => item.substring(1, item.length - 1));
 }
 
 
