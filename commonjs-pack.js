@@ -68,8 +68,7 @@ function parseRequire(moduleName) {
     var dirPath = path.dirname(moduleName) + '/';
     return fs.readFileAsync(moduleName + '.js', 'utf-8')
         .then(code => {
-            var requires = matchRequire(code);
-            requires.forEach(item => {
+            matchRequire(code).forEach(item => {
                 var reg1 = new RegExp("require\\(\"" + item + "\"\\)");
                 var reg2 = new RegExp("require\\(\'" + item + "\'\\)");
                 var modulePath = path.normalize(dirPath + item);
