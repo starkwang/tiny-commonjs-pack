@@ -52,7 +52,6 @@ function bundleModule(moduleName, nowPath) {
         })
         .then(contents => matchRequire(contents))
         .then(requires => {
-
             if (requires.length > 0) {
                 return Promise.map(requires, (requireName => {
                     return bundleModule(requireName, path.dirname(nowPath + moduleName) + "/")
