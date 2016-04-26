@@ -6,17 +6,15 @@ git clone https://github.com/starkwang/tiny-commonjs-pack.git
 cd tiny-commonjs-pack
 
 npm install
+
+npm run build
 ```
 ------
 
 
 #Test
-Make sure you have `babel-node` for running this packer:
 
 ```
-npm install babel-node -g
+npm run test
 ```
-```
-babel-node commonjs-pack.js test/index.js --presets es2015
-```
-And then you'll get bundle.js
+And then you'll bundle the `test/index.js` to `bundle.js`
