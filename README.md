@@ -11,6 +11,11 @@ npm install
 
 
 #Test
+Make sure you have `babel-node` for running this packer:
+
+```
+npm install babel-node -g
+```
 ```
 babel-node commonjs-pack.js test/index.js --presets es2015
 ```
