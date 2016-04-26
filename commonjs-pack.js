@@ -25,8 +25,7 @@ var outputFile = process.argv[3] || "bundle.js"
 function pack(fileName) {
     var name = fileName.replace(/\.js/, "");
 
-    //基本的module模板
-    var str = "function(module, exports, require, global){\n{{moduleContent}}\n}";
+    var moduleTemplate = "function(module, exports, require, global){\n{{moduleContent}}\n}";
 
     //递归打包
     bundleModule(name, './')
@@ -40,7 +39,7 @@ function pack(fileName) {
             //合并模块
             var modules = [];
             moduleContents.forEach(content => {
-                modules.push(str.replace(/{{moduleContent}}/, content));
+                modules.push(moduleTemplate.replace(/{{moduleContent}}/, content));
             })
             return '[\n' + modules.join(',\n') + '\n]'
         })
