@@ -1,4 +1,4 @@
-var module1 = require("./test/module1");
+var module1 = require("./module1/module1");
 module1.foo();
 function hello(){
     console.log("Hello!");
