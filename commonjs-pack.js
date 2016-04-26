@@ -33,21 +33,22 @@ function pack(fileName) {
             console.log(__MODULES);
 
             //把模块名替换成数字ID
-            return Promise.map(__MODULES, (moduleName => replaceRequireWithID(moduleName)))
+            return Promise.map(__MODULES, replaceRequireWithID)
         })
-        .then(moduleContents => {
-            //合并模块
-            var modules = [];
-            moduleContents.forEach(content => {
-                modules.push(moduleTemplate.replace(/{{moduleContent}}/, content));
-            })
-            return '[\n' + modules.join(',\n') + '\n]'
-        })
+        .then(moduleContents => (
+            '[' +
+                moduleContents.map(
+                    content => moduleTemplate.replace(/{{moduleContent}}/, content)
+                ).join(',\n') +
+            ']'
+        ))
         //输出
-        .then(modules => fs.readFileAsync("packSource.js", "utf-8")
-        .then(content => content + "(" + modules + ")"))
-        .then(result => js_beautify(result))
-        .then(x => log(x))
+        .then(modules => (
+            fs.readFileAsync("packSource.js", "utf-8")
+                .then(content => content + "(" + modules + ")")
+        ))
+        .then(js_beautify)
+        .then(log)
         .then(result => fs.writeFileAsync(outputFile, result))
         .then(() => console.log("bundle success!"));
 }
@@ -67,9 +68,9 @@ function bundleModule(moduleName, nowPath) {
         .then(requires => {
             if (requires.length > 0) {
                 //对每个require分别递归打包
-                return Promise.map(requires, (requireName => {
-                    return bundleModule(requireName, path.dirname(nowPath + moduleName) + "/")
-                }))
+                return Promise.map(requires, (requireName => (
+                    bundleModule(requireName, path.dirname(nowPath + moduleName) + "/")
+                )))
             } else {
                 return Promise.resolve();
             }
@@ -84,8 +85,8 @@ function replaceRequireWithID(moduleName) {
         .then(code => {
             matchRequire(code).forEach(item => {
                 var regRequire = new RegExp(
-                	"require\\(\"" + item + "\"\\)|" +
-                	"require\\(\'" + item + "\'\\)"
+                    "require\\(\"" + item + "\"\\)|" +
+                    "require\\(\'" + item + "\'\\)"
                 );
                 var modulePath = path.normalize(dirPath + item);
                 var moduleID = __MODULES.indexOf(modulePath);
@@ -100,8 +101,8 @@ function replaceRequireWithID(moduleName) {
 function matchRequire(code) {
     var requires = code.match(/require\("\S*"\)|require\('\S*'\)/g) || [];
     return requires
-    	.map(item => item.match(/"\S*"|'\S*'/)[0])
-    	.map(item => item.substring(1, item.length - 1));
+        .map(item => item.match(/"\S*"|'\S*'/)[0])
+        .map(item => item.substring(1, item.length - 1));
 }
 
 
